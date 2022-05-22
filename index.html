@@ -43,13 +43,13 @@
 <body>
 	<div id="gameContainer">
 		<canvas id="unity-canvas" data-pixel-art=""></canvas>
-		<script src="Build/Stack.loader.js"></script>
+		<script src="Build/HexaStack.loader.js"></script>
 		<script>
 			var canvas = document.querySelector("#unity-canvas");
 			var config = {
-				dataUrl: "Build/Stack.data",
-				frameworkUrl: "Build/Stack.framework.js",
-				codeUrl: "Build/Stack.wasm",
+				dataUrl: "Build/HexaStack.data",
+				frameworkUrl: "Build/HexaStack.framework.js",
+				codeUrl: "Build/HexaStack.wasm",
 				streamingAssetsUrl: "StreamingAssets",
 				companyName: "InnovDev",
 				productName: "Hexagon Stack",
@@ -76,15 +76,15 @@
 					w = window.innerWidth;
 					h = window.innerHeight;
 
-					var r = 900 / 600;
+					var r = 1200 / 800;
 
 					if (w * r > window.innerHeight) {
 						w = Math.min(w, Math.ceil(h / r));
 					}
 					h = Math.floor(w * r);
 				} else {
-					w = 600;
-					h = 900;
+					w = 800;
+					h = 1200;
 				}
 
 				container.style.width = canvas.style.width = w + "px";
