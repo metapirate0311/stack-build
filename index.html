@@ -76,15 +76,15 @@
 					w = window.innerWidth;
 					h = window.innerHeight;
 
-					var r = 1200 / 800;
+					var r = 900 / 600;
 
 					if (w * r > window.innerHeight) {
 						w = Math.min(w, Math.ceil(h / r));
 					}
 					h = Math.floor(w * r);
 				} else {
-					w = 800;
-					h = 1200;
+					w = 600;
+					h = 900;
 				}
 
 				container.style.width = canvas.style.width = w + "px";
