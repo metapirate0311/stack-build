@@ -19,6 +19,7 @@
       <div id="unity-warning"> </div>
       <div id="unity-footer">
         <div id="unity-webgl-logo"></div>
+        <div id="unity-fullscreen-button"></div>
         <div id="unity-build-title">Hexagon Stack</div>
       </div>
     </div>
@@ -95,31 +96,29 @@
 				scaleToFit = true;
 			}
 		function onResize() {
-				var container = canvas.parentElement;
-				var w;
-				var h;
+			var container = canvas.parentElement;
+			var w;
+			var h;	
+			if (scaleToFit) {
+				w = window.innerWidth;
+				h = window.innerHeight;
 
-				
-				if (scaleToFit) {
-					w = window.innerWidth;
-					h = window.innerHeight;
+				var r = 960 / 600;
 
-					var r = 900 / 600;
-
-					if (w * r > window.innerHeight) {
-						w = Math.min(w, Math.ceil(h / r));
-					}
-					h = Math.floor(w * r);
-				} else {
-					w = 600;
-					h = 900;
+				if (w * r > window.innerHeight) {
+					w = Math.min(w, Math.ceil(h / r));
 				}
-
-				container.style.width = canvas.style.width = w + "px";
-				container.style.height = canvas.style.height = h + "px";
-				container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
-				container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
+				h = Math.floor(w * r);
+			} else {
+				w = 600;
+				h = 960;
 			}
+
+			container.style.width = canvas.style.width = w + "px";
+			container.style.height = canvas.style.height = h + "px";
+			container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
+			container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
+		}
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -135,7 +134,7 @@
       };
 	  window.addEventListener('resize', onResize);
 			onResize();
-      document.body.appendChild(script);	  
+      document.body.appendChild(script);
     </script>
   </body>
 </html>
