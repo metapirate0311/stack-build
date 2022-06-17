@@ -16,12 +16,7 @@
           <div id="unity-progress-bar-full"></div>
         </div>
       </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">Hexagon Stack</div>
-      </div>
+      <div id="unity-warning"> </div>      
     </div>
     <script src="web3/index.js"></script>
     <script>
@@ -66,7 +61,7 @@
         companyName: "InnovDev",
         productName: "Hexagon Stack",
         productVersion: "1.0",
-        showBanner: unityShowBanner,
+        //showBanner: unityShowBanner,
       };
 
       // By default Unity keeps WebGL canvas render target size matched with
@@ -81,7 +76,7 @@
         // Avoid draining fillrate performance on mobile devices,
         // and default/override low DPI mode on mobile browsers.
         config.devicePixelRatio = 1;
-        unityShowBanner('WebGL builds are not supported on mobile devices.');
+        //unityShowBanner('WebGL builds are not supported on mobile devices.');
       } else {
         canvas.style.width = "600px";
         canvas.style.height = "960px";
