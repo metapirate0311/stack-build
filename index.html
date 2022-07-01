@@ -1,134 +1,169 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | WebLoadingTest</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=600 height=960></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Tower Stack Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="author" content="billsedison">
+    <meta name="description" content="Srims poc">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="leaderBoard.css">
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="build/bundle.js"></script>
+</head>
+
+<body>
+    <meta name="viewport" content="width=device-width,user-scalable=no">
+
+    <div id="container">
+        <div id="game"></div>
+        <div id="score">0</div>
+        <div id="instructions">Click (or press the spacebar) to place the block</div>
+        <div class="game-rank">
+            <div id="leaderboard"></div>
         </div>
-      </div>
-      <div id="unity-warning"> </div>      
-    </div>
-    <script src="web3/index.js"></script>
-    <script>
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      //var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+        <div class="game-over">
+            <h2>Game Over</h2>
+            <p>You did great, you're the best.</p>
+            <p>Click or spacebar to start again</p>
+        </div>
+        <div class="game-ready">
+            <button id="wallet-connect-button">Connect Wallet</button>
+            <button class="game-button" id="offline-button">Offline Start</button>
+            <button class="game-button" id="online-button">Online Start</button>
+            <button class="game-button" id="leaderboard-button">Leader Board</button>
+            <div></div>
+        </div>
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        <audio id="music" src="sound/bensound-dreams.mp3" preload="auto" loop></audio>
+    </div>    
+    <script type="text/babel">
+
+        // Table Header w/ Buttons for recent/alltime
+        function TableHead(props) {
+            return (
+                <tr>
+                    <td width="10%">Rank</td>
+                    <td width="70%">Account</td>
+                    <td width="20%">Score</td>
+                </tr>
+            )
         }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
+
+        // Individual Table Rows
+        class TableBody extends React.Component {
+            constructor(props) {
+                super(props);
+            }
+
+            render() {
+                const account = this.props.camper.account.slice(0, 5) + "..." + this.props.camper.account.slice(-3);
+                const score = this.props.camper.score;
+                return (
+                    <tr>
+                        <td>{this.props.index}</td>
+                        <td>{account}</td>
+                        <td>{score}</td>
+                    </tr>
+                );
+            }
         }
-        updateBannerVisibility();
-      }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/Stack_ChainSafe.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/Stack_ChainSafe.data",
-        frameworkUrl: buildUrl + "/Stack_ChainSafe.framework.js",
-        codeUrl: buildUrl + "/Stack_ChainSafe.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "JohannesDeml",
-        productName: "WebLoadingTest",
-        productVersion: "1.0.0",
-        //showBanner: unityShowBanner,
-      };
+        // Main Leaderboard
+        class Leaderboard extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    leaders: []
+                }
+                this.handleRecent = this.handleRecent.bind(this);
+                this.handleAllTime = this.handleAllTime.bind(this);
+            }
 
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+            // Start w top recents
+            componentDidMount() {
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        container.className = "unity-mobile";
-        // Avoid draining fillrate performance on mobile devices,
-        // and default/override low DPI mode on mobile browsers.
-        config.devicePixelRatio = 1;
-        //unityShowBanner('WebGL builds are not supported on mobile devices.');
-      } else {
-        canvas.style.width = "600px";
-        canvas.style.height = "960px";
-      }
-      loadingBar.style.display = "block";
-	  
-	  var scaleToFit;
-			try {
-				scaleToFit = !!JSON.parse("");
-			} catch (e) {
-				scaleToFit = true;
-			}
-		function onResize() {
-			var container = canvas.parentElement;
-			var w;
-			var h;	
-			if (scaleToFit) {
-				w = window.innerWidth;
-				h = window.innerHeight;
+                var requestOptions = {
+                    method: 'POST',
+                    redirect: 'follow'
+                };
 
-				var r = 960 / 600;
+                fetch("https://stack-server.onrender.com/api/user/getScores", requestOptions)
+                    .then(response => response.json())
+                    .then(result => this.setState({
+                        leaders: result.result.slice(1, 13)
+                    }))
+                    .catch(error => console.log('error', error));
+            }
 
-				if (w * r > window.innerHeight) {
-					w = Math.min(w, Math.ceil(h / r));
-				}
-				h = Math.floor(w * r);
-			} else {
-				w = 600;
-				h = 960;
-			}
+            // Sort by top recent
+            handleRecent(e) {
+                e.preventDefault();
+                var requestOptions = {
+                    method: 'POST',
+                    redirect: 'follow'
+                };
 
-			container.style.width = canvas.style.width = w + "px";
-			container.style.height = canvas.style.height = h + "px";
-			container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
-			container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
-		}
+                fetch("https://stack-server.onrender.com/api/user/getScores", requestOptions)
+                    .then(response => response.json())
+                    .then(result => this.setState({
+                        leaders: result.result
+                    }))
+                    .catch(error => console.log('error', error));
+            }
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-		  onResize();
-        }).catch((message) => {
-          alert(message);
-        });
-      };
-	  window.addEventListener('resize', onResize);
-			onResize();
-      document.body.appendChild(script);
+            // Sort by top alltime
+            handleAllTime(e) {
+                e.preventDefault();
+                var requestOptions = {
+                    method: 'POST',
+                    redirect: 'follow'
+                };
+
+                fetch("https://stack-server.onrender.com/api/user/getScores", requestOptions)
+                    .then(response => response.json())
+                    .then(result => this.setState({
+                        leaders: result.result
+                    }))
+                    .catch(error => console.log('error', error));
+            }
+
+            render() {
+                const campersList = this.state.leaders;
+                return (
+                    <div>
+                        <table>
+                            <thead>
+                                <TableHead
+                                    recent={this.handleRecent}
+                                    alltime={this.handleAllTime}
+                                />
+                            </thead>
+                            <tbody>
+                                {campersList.map((camper, index) => {
+                                    return <TableBody
+                                        camper={camper}
+                                        index={index + 1}
+                                    />
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(
+            <Leaderboard />,
+            document.getElementById('leaderboard')
+        );
+
+
     </script>
-  </body>
+</body>
+
 </html>
